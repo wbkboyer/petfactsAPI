@@ -96,3 +96,4 @@ IDEAS for EXTENSIONS:
 1. [Gunicorn can't find app when name changed from “application”
 ](https://stackoverflow.com/questions/33379287/gunicorn-cant-find-app-when-name-changed-from-application/33379650) Stackexchange post from October 27, 2015. Accessed: February 26, 2018
 1. [Build a Restful API with Flask the TDD way](https://scotch.io/tutorials/build-a-restful-api-with-flask-the-tdd-way). May 3, 2017. Accessed: February 26, 2018
+1. [SQLite Python: Insert Rows](http://www.sqlitetutorial.net/sqlite-python/insert/). Accessed February 27, 2018
