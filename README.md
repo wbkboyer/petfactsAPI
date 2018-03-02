@@ -97,3 +97,6 @@ IDEAS for EXTENSIONS:
 ](https://stackoverflow.com/questions/33379287/gunicorn-cant-find-app-when-name-changed-from-application/33379650) Stackexchange post from October 27, 2015. Accessed: February 26, 2018
 1. [Build a Restful API with Flask the TDD way](https://scotch.io/tutorials/build-a-restful-api-with-flask-the-tdd-way). May 3, 2017. Accessed: February 26, 2018
 1. [SQLite Python: Insert Rows](http://www.sqlitetutorial.net/sqlite-python/insert/). Accessed February 27, 2018
+1. [Flask-restful](https://flask-restful.readthedocs.io/en/latest/)
+1. [SQLite Functions - Datetime](https://www.techonthenet.com/sqlite/functions/datetime.php)
+1. [Server-side Logic to handle Slack Slash Commands using Python and Flask](https://gist.github.com/devStepsize/59c15d850e82a77e539b8ff3d5cb5cad). Accessed: March 1, 2018.
