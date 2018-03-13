@@ -20,6 +20,11 @@ parser = reqparse.RequestParser()
 parser.add_argument('pet_type')
 
 
+class HelloWorld(Resource):
+    def get(self):
+        return {'hello': 'world'}
+
+
 class FetchFact(Resource):
     """ Handling /fetchfact <pet_type>
 
@@ -91,7 +96,7 @@ class FetchFact(Resource):
         return True
 
     def post(self):
-        args = parser.parse_args()
+        args = parser.parse_args(strict=True)
         if not self._authenticate_request(args["token"]):
 #            application.logger.error("Invalid token for request.")
             return jsonify({
@@ -118,10 +123,11 @@ class FetchFact(Resource):
 
 
 api.add_resource(FetchFact, '/fetchfact')
+api.add_resource(HelloWorld, '/')
 
 if __name__ == '__main__':
 #    handler = TimedRotatingFileHandler('/home/ubuntu/petfacts/logs/petfacts-error.log', when='midnight', interval=1)
 #    handler.setLevel(logging.DEBUG)
 #    application.logger.addHandler(handler)
 #    application.logger.setLevel(logging.DEBUG)
-    application.run(host="0.0.0.0", port='8080')
+    application.run(host="0.0.0.0")
