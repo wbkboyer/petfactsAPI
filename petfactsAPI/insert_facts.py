@@ -1,4 +1,4 @@
-#!flask/bin/python
+#!../../flask/bin/python
 # -*- coding: UTF-8 -*-
 
 from datetime import datetime
@@ -54,7 +54,7 @@ def add_fact(conn, pet_type, fact):
 
 def main(pet_type):
     # create a database connection
-    with create_connection("./petfacts.db") as conn:
+    with create_connection("./petfacts_database.sqlite") as conn:
         with open("./{}_facts.txt".format(pet_type), "r") as f_in:
             facts = f_in.readlines()
             for fact in facts:

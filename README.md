@@ -100,3 +100,4 @@ IDEAS for EXTENSIONS:
 1. [Flask-restful](https://flask-restful.readthedocs.io/en/latest/)
 1. [SQLite Functions - Datetime](https://www.techonthenet.com/sqlite/functions/datetime.php)
 1. [Server-side Logic to handle Slack Slash Commands using Python and Flask](https://gist.github.com/devStepsize/59c15d850e82a77e539b8ff3d5cb5cad). Accessed: March 1, 2018.
+1. Liao, Peiyu. [Flask App with Gunicorn on Nginx server upon AWS EC2 Linux](https://pyliaorachel.github.io/blog/tech/system/2017/07/07/flask-app-with-gunicorn-on-nginx-server-upon-aws-ec2-linux.html). July 7, 2017. Accessed: March 12, 2018

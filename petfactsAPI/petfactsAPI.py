@@ -1,11 +1,14 @@
-#!flask/bin/python
+#!../../flask/bin/python
 from flask import Flask, Blueprint
 from flask_restful import Resource, Api, reqparse
 from sqlalchemy import create_engine
 import sqlite3
 from flask.json import jsonify
+#import logging
+#from logging.handlers import RotatingFileHandler
 
-e = create_engine('sqlite:///petfactsAPI.db',
+
+e = create_engine('sqlite:///petfacts_database.sqlite',
                   connect_args={'detect_types': sqlite3.PARSE_DECLTYPES | sqlite3.PARSE_COLNAMES},
                   native_datetime=True)
 
@@ -90,6 +93,7 @@ class FetchFact(Resource):
     def post(self):
         args = parser.parse_args()
         if not self._authenticate_request(args["token"]):
+#            application.logger.error("Invalid token for request.")
             return jsonify({
                             'response_type': 'ephemeral',
                             'text': 'Could not authenticate request is coming from Slack.'
@@ -98,12 +102,14 @@ class FetchFact(Resource):
         pet_type = self._validate_pet_type(args["text"])
         if pet_type:
             fact = self._fetch_fact(pet_type)
+#            application.logger.info("Returning {} fact.".format(pet_type))
             return jsonify({
                 'response_type': 'in_channel',
                 'text': 'A fact about {pet}s:\n{fact}'.format(pet=pet_type, fact=fact),
             })
         else:
             pet_list = self._fetch_valid_pets()
+#	    application.logger.error("Invalid pet type: {}".format(pet_type))
             return jsonify({
                 "response_type": "ephemeral",
                 'text': ('Invalid pet type; must enter only one pet type at a time.'
@@ -114,4 +120,8 @@ class FetchFact(Resource):
 api.add_resource(FetchFact, '/fetchfact')
 
 if __name__ == '__main__':
-    application.run(debug=True, host="127.0.0.1")
+#    handler = TimedRotatingFileHandler('/home/ubuntu/petfacts/logs/petfacts-error.log', when='midnight', interval=1)
+#    handler.setLevel(logging.DEBUG)
+#    application.logger.addHandler(handler)
+#    application.logger.setLevel(logging.DEBUG)
+    application.run(host="0.0.0.0", port='8080')
