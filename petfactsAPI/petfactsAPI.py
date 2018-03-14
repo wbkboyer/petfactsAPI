@@ -1,11 +1,11 @@
 #!../../flask/bin/python
-from flask import Flask, Blueprint
+from flask import Flask, request
 from flask_restful import Resource, Api, reqparse
 from sqlalchemy import create_engine
 import sqlite3
 from flask.json import jsonify
-#import logging
-#from logging.handlers import RotatingFileHandler
+
+import logging
 
 
 e = create_engine('sqlite:///petfacts_database.sqlite',
@@ -13,16 +13,7 @@ e = create_engine('sqlite:///petfacts_database.sqlite',
                   native_datetime=True)
 
 application = Flask(__name__)
-api_bp = Blueprint('api', __name__)
-api = Api(api_bp)
-
-parser = reqparse.RequestParser()
-parser.add_argument('pet_type')
-
-
-class HelloWorld(Resource):
-    def get(self):
-        return {'hello': 'world'}
+api = Api(application)
 
 
 class FetchFact(Resource):
@@ -36,6 +27,8 @@ class FetchFact(Resource):
     def __init__(self):
         super(FetchFact, self).__init__()
         self._conn = e.connect()
+        self._parser = reqparse.RequestParser()
+        self._parser.add_argument('text', type=str, location='json', required=True)
 
     def _verify_table_exists(self, table_name):
         """
@@ -44,8 +37,11 @@ class FetchFact(Resource):
         :return boolean:
         """
         sql = "PRAGMA table_info({})".format(table_name)
-        self._conn.execute(sql)
-        return len(self._conn.fetchall())
+#        cursor = self._conn.cursor()
+#        cursor.execute(sql)
+#        return len(cursor.fetchall())
+        results = self._conn.execute(sql).returns_rows
+        return results
 
     def _validate_pet_type(self, pet_type):
         """
@@ -63,29 +59,34 @@ class FetchFact(Resource):
         :param pet_type:
         :return: str
         """
-        sql = ("select id, fact"
+        query = ("select id, fact"
                " from {pet}_facts"
                " where last_shown <= datetime('now', '-{older_than}');"
                ).format(pet=pet_type, older_than=older_than)
-        query = self._conn.execute()
-        fact = query.cursor.fetchone()
-
+        #cursor = self._conn.cursor()
+        #cursor.execute(query)
+        #fact = cursor.fetchone()
+        fact = self._conn.execute(query)
         # Need to update last_shown to current time so we don't repeat too often
-        fact_id = fact[0]
-        sql = ("update {pet}_facts"
+        fact_id = fact[0][0]
+        query = ("update {pet}_facts"
                " set last_shown = datetime('now')"
                " where id = {}"
                ).format(pet=pet_type, id=fact_id)
-        return fact[1]
+#        cursor.execute(query)
+        self._conn.execute(query)
+        return fact[0][1]
 
     def _fetch_valid_pets(self):
         """
         Queries db table containing all valid pet types.
         :return: list of pets which have corresponding pet table.
         """
-        sql = "select type from pet_list;"
-        self._conn.execute(sql)
-        return [x['type'] for x in self._conn.fetchall()]
+        query = "select type from pet_list;"
+#        cursor = self._conn.cursor()
+#        cursor.execute(query)
+#        return [x['type'] for x in cursor.fetchall()]
+        return [x['type'] for x in self._conn.execute(query)]
 
     def _authenticate_request(self, token):
         """
@@ -96,38 +97,33 @@ class FetchFact(Resource):
         return True
 
     def post(self):
-        args = parser.parse_args(strict=True)
-        if not self._authenticate_request(args["token"]):
+#        if not self._authenticate_request(args["token"]):
 #            application.logger.error("Invalid token for request.")
-            return jsonify({
-                            'response_type': 'ephemeral',
-                            'text': 'Could not authenticate request is coming from Slack.'
-                            })
+#            return {
+#                            'response_type': 'ephemeral',
+#                            'text': 'Could not authenticate request is coming from Slack.'
+#                            }
 
-        pet_type = self._validate_pet_type(args["text"])
+        args = self._parser.parse_args()
+        pet_type = self._validate_pet_type(args.text)
         if pet_type:
             fact = self._fetch_fact(pet_type)
-#            application.logger.info("Returning {} fact.".format(pet_type))
-            return jsonify({
+            return {
                 'response_type': 'in_channel',
                 'text': 'A fact about {pet}s:\n{fact}'.format(pet=pet_type, fact=fact),
-            })
+            }
         else:
-            pet_list = self._fetch_valid_pets()
-#	    application.logger.error("Invalid pet type: {}".format(pet_type))
-            return jsonify({
+           # pet_list = self._fetch_valid_pets()
+            return {
                 "response_type": "ephemeral",
-                'text': ('Invalid pet type; must enter only one pet type at a time.'
-                         ' Please try again with one of:{pets}').format(pets='\r- '.join(pet_list))
-            })
+           #     'text': ('Invalid pet type; must enter only one pet type at a time.'
+           #              ' Please try again with one of:{pets}').format(pets=' ,'.join(pet_list))
+                'text': 'Invalid pet selection.'
+            }
 
 
 api.add_resource(FetchFact, '/fetchfact')
-api.add_resource(HelloWorld, '/')
+api.init_app(application)
 
 if __name__ == '__main__':
-#    handler = TimedRotatingFileHandler('/home/ubuntu/petfacts/logs/petfacts-error.log', when='midnight', interval=1)
-#    handler.setLevel(logging.DEBUG)
-#    application.logger.addHandler(handler)
-#    application.logger.setLevel(logging.DEBUG)
-    application.run(host="0.0.0.0")
+    application.run(host='0.0.0.0', port=8000, debug=True)
