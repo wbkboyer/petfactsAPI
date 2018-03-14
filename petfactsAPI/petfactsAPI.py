@@ -1,4 +1,5 @@
 #!../../flask/bin/python
+import os
 from flask import Flask, request
 from flask_restful import Resource, Api, reqparse
 from sqlalchemy import create_engine
@@ -7,8 +8,9 @@ from flask.json import jsonify
 
 import logging
 
-
-e = create_engine('sqlite:///petfacts_database.sqlite',
+basedir = os.path.abspath(os.path.dirname(__file__))
+SQLALCHEMY_DATABASE_URI = 'sqlite:///' + os.path.join(basedir, 'petfacts_database.sqlite')
+e = create_engine(SQLALCHEMY_DATABASE_URI,
                   connect_args={'detect_types': sqlite3.PARSE_DECLTYPES | sqlite3.PARSE_COLNAMES},
                   native_datetime=True)
 
@@ -66,16 +68,16 @@ class FetchFact(Resource):
         #cursor = self._conn.cursor()
         #cursor.execute(query)
         #fact = cursor.fetchone()
-        fact = self._conn.execute(query)
+        fact = self._conn.execute(query).fetchone()
         # Need to update last_shown to current time so we don't repeat too often
-        fact_id = fact[0][0]
+        fact_id = fact[0]
         query = ("update {pet}_facts"
                " set last_shown = datetime('now')"
-               " where id = {}"
+               " where id = {id}"
                ).format(pet=pet_type, id=fact_id)
 #        cursor.execute(query)
         self._conn.execute(query)
-        return fact[0][1]
+        return fact[1]
 
     def _fetch_valid_pets(self):
         """
@@ -86,7 +88,7 @@ class FetchFact(Resource):
 #        cursor = self._conn.cursor()
 #        cursor.execute(query)
 #        return [x['type'] for x in cursor.fetchall()]
-        return [x['type'] for x in self._conn.execute(query)]
+        return [x['type'] for x in self._conn.execute(query).fetchall()]
 
     def _authenticate_request(self, token):
         """
