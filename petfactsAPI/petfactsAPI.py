@@ -17,6 +17,19 @@ e = create_engine(SQLALCHEMY_DATABASE_URI,
 application = Flask(__name__)
 api = Api(application)
 
+class Unsubscribe(Resource):
+    """Nobody really wants to unsubscribe from pet facts. 
+
+    """
+
+    def __init__(self):
+        super(Unsubscribe, self).__init__()
+    def post(self):
+         return {
+                    "response_type": "ephemeral",
+                    'text': 'What kind of monster are you, not wanting to be subscribed to pet facts?! Shame!'
+                }, 200
+
 
 class FetchFact(Resource):
     """ Handling /fetchfact <pet_type>
@@ -29,8 +42,6 @@ class FetchFact(Resource):
     def __init__(self):
         super(FetchFact, self).__init__()
         self._conn = e.connect()
-        #self._parser = reqparse.RequestParser()
-        #self._parser.add_argument('text', type=str, location='json', required=True)
 
     def _verify_table_exists(self, table_name):
         """
@@ -39,9 +50,6 @@ class FetchFact(Resource):
         :return boolean:
         """
         sql = "PRAGMA table_info({})".format(table_name)
-#        cursor = self._conn.cursor()
-#        cursor.execute(sql)
-#        return len(cursor.fetchall())
         results = self._conn.execute(sql).returns_rows
         return results
 
@@ -65,9 +73,6 @@ class FetchFact(Resource):
                " from {pet}_facts"
                " where last_shown <= datetime('now', '-{older_than}');"
                ).format(pet=pet_type, older_than=older_than)
-        #cursor = self._conn.cursor()
-        #cursor.execute(query)
-        #fact = cursor.fetchone()
         fact = self._conn.execute(query).fetchone()
         # Need to update last_shown to current time so we don't repeat too often
         fact_id = fact[0]
@@ -75,7 +80,6 @@ class FetchFact(Resource):
                " set last_shown = datetime('now')"
                " where id = {id}"
                ).format(pet=pet_type, id=fact_id)
-#        cursor.execute(query)
         self._conn.execute(query)
         return fact[1]
 
@@ -85,9 +89,6 @@ class FetchFact(Resource):
         :return: list of pets which have corresponding pet table.
         """
         query = "select type from pet_list;"
-#        cursor = self._conn.cursor()
-#        cursor.execute(query)
-#        return [x['type'] for x in cursor.fetchall()]
         return [x['type'] for x in self._conn.execute(query).fetchall()]
 
     def _authenticate_request(self, token):
@@ -99,40 +100,38 @@ class FetchFact(Resource):
         return True
 
     def post(self):
-#        if not self._authenticate_request(args["token"]):
+#        if not self._authenticate_request(request.values.get('token')):
 #            application.logger.error("Invalid token for request.")
 #            return {
 #                            'response_type': 'ephemeral',
 #                            'text': 'Could not authenticate request is coming from Slack.'
 #                            }
 
-        #args = self._parser.parse_args()
         try:
             pet_type = request.values.get('text')
             if not pet_type:
                 return {"successful": False, "msg": "Couldn't retrieve text from request body."}, 400
         except Exception as e:
             return {"poop":"stink str(e)"}, 400
-        #pet_type = self._validate_pet_type(args.text)
         else:
+            pet_type = self._validate_pet_type(pet_type)
             if pet_type:
-                pet_type = self._validate_pet_type(pet_type)
                 fact = self._fetch_fact(pet_type)
                 return {
                     'response_type': 'in_channel',
                     'text': 'A fact about {pet}s:\n{fact}'.format(pet=pet_type, fact=fact),
                 }
             else:
-               # pet_list = self._fetch_valid_pets()
+                pet_list = self._fetch_valid_pets()
                 return {
                     "response_type": "ephemeral",
-               #     'text': ('Invalid pet type; must enter only one pet type at a time.'
-               #              ' Please try again with one of:{pets}').format(pets=' ,'.join(pet_list))
-                    'text': 'Invalid pet selection.'
+                    'text': ('Invalid pet type; must enter only one pet type at a time.'
+                             ' Please try again with one of the following types: {pets}.').format(pets=' ,'.join(pet_list).rstrip(','))
                 }
 
 
 api.add_resource(FetchFact, '/fetchfact')
+api.add_resource(Unsubscribe, '/unsubscribe')
 api.init_app(application)
 
 if __name__ == '__main__':
