@@ -29,8 +29,8 @@ class FetchFact(Resource):
     def __init__(self):
         super(FetchFact, self).__init__()
         self._conn = e.connect()
-        self._parser = reqparse.RequestParser()
-        self._parser.add_argument('text', type=str, location='json', required=True)
+        #self._parser = reqparse.RequestParser()
+        #self._parser.add_argument('text', type=str, location='json', required=True)
 
     def _verify_table_exists(self, table_name):
         """
@@ -106,22 +106,30 @@ class FetchFact(Resource):
 #                            'text': 'Could not authenticate request is coming from Slack.'
 #                            }
 
-        args = self._parser.parse_args()
-        pet_type = self._validate_pet_type(args.text)
-        if pet_type:
-            fact = self._fetch_fact(pet_type)
-            return {
-                'response_type': 'in_channel',
-                'text': 'A fact about {pet}s:\n{fact}'.format(pet=pet_type, fact=fact),
-            }
+        #args = self._parser.parse_args()
+        try:
+            pet_type = request.values.get('text')
+            if not pet_type:
+                return {"successful": False, "msg": "Couldn't retrieve text from request body."}, 400
+        except Exception as e:
+            return {"poop":"stink str(e)"}, 400
+        #pet_type = self._validate_pet_type(args.text)
         else:
-           # pet_list = self._fetch_valid_pets()
-            return {
-                "response_type": "ephemeral",
-           #     'text': ('Invalid pet type; must enter only one pet type at a time.'
-           #              ' Please try again with one of:{pets}').format(pets=' ,'.join(pet_list))
-                'text': 'Invalid pet selection.'
-            }
+            if pet_type:
+                pet_type = self._validate_pet_type(pet_type)
+                fact = self._fetch_fact(pet_type)
+                return {
+                    'response_type': 'in_channel',
+                    'text': 'A fact about {pet}s:\n{fact}'.format(pet=pet_type, fact=fact),
+                }
+            else:
+               # pet_list = self._fetch_valid_pets()
+                return {
+                    "response_type": "ephemeral",
+               #     'text': ('Invalid pet type; must enter only one pet type at a time.'
+               #              ' Please try again with one of:{pets}').format(pets=' ,'.join(pet_list))
+                    'text': 'Invalid pet selection.'
+                }
 
 
 api.add_resource(FetchFact, '/fetchfact')
